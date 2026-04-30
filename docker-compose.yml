@@ -9,8 +9,8 @@ services:
     environment:
       NODE_ENV: production
       IT_LANDSCAPE_ENV: ${IT_LANDSCAPE_ENV:-development}
-      NETBOX_URL: ${NETBOX_URL:-}
-      NETBOX_TOKEN: ${NETBOX_TOKEN:-}
+      NETBOX_URL: ${NETBOX_URL:-http://netbox:8080}
+      NETBOX_TOKEN: ${NETBOX_TOKEN:-0123456789abcdef0123456789abcdef01234567}
       NETBOX_TRIGRAMME_TAG_PREFIX: ${NETBOX_TRIGRAMME_TAG_PREFIX:-app:}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-dev-only-nextauth-secret-change-in-production}
       NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
@@ -51,6 +51,12 @@ services:
   netbox:
     image: netboxcommunity/netbox:v4.3
     profiles: ["netbox"]
+    command:
+      - /bin/sh
+      - -lc
+      - |
+        sh /opt/netbox/local/patch-settings.sh
+        exec /opt/netbox/docker-entrypoint.sh /opt/netbox/launch-netbox.sh
     ports:
       - "8080:8080"
     depends_on:
@@ -76,11 +82,14 @@ services:
       SUPERUSER_PASSWORD: ${NETBOX_SUPERUSER_PASSWORD:-password}
       ALLOWED_HOSTS: "*"
       CSRF_TRUSTED_ORIGINS: ${NETBOX_CSRF_TRUSTED_ORIGINS:-http://localhost:8080 https://localhost:8080 http://127.0.0.1:8080 https://127.0.0.1:8080 https://*.app.github.dev https://*.github.dev https://github.com}
+      CSRF_COOKIE_NAME: ${NETBOX_CSRF_COOKIE_NAME:-netbox_csrftoken}
+      SESSION_COOKIE_NAME: ${NETBOX_SESSION_COOKIE_NAME:-netbox_sessionid}
       SKIP_SUPERUSER: "false"
     volumes:
       - netbox-media-files:/opt/netbox/netbox/media
       - netbox-reports-files:/opt/netbox/netbox/reports
       - netbox-scripts-files:/opt/netbox/netbox/scripts
+      - ./config/netbox/patch-settings.sh:/opt/netbox/local/patch-settings.sh:ro
 
 volumes:
   data:
